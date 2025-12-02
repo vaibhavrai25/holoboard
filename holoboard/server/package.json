@@ -1,0 +1,11 @@
+{
+  "name": "holoboard-server",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "HOST=0.0.0.0 PORT=1234 node node_modules/y-websocket/bin/server.js"
+  },
+  "dependencies": {
+    "y-websocket": "^1.5.0",
+    "ws": "^8.16.0"
+  }
+}

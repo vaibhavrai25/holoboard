@@ -1,0 +1,82 @@
+:root {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+
+  /* --- DEFAULT DARK THEME VARIABLES --- */
+  --bg-color: #1a1a1a;
+  --text-color: rgba(255, 255, 255, 0.87);
+  --toolbar-bg: #2a2a2a;
+  --toolbar-border: #444;
+  --button-bg: #3a3a3a;
+  --button-border: #555;
+  --button-hover: #646cff;
+  /* This variable is updated dynamically by JavaScript */
+  --grid-color: rgba(255, 255, 255, 0.05);
+}
+
+/* --- LIGHT THEME OVERRIDES --- */
+.light-mode {
+  --bg-color: #f4f4f9;
+  --text-color: #1a1a1a;
+  --toolbar-bg: #ffffff;
+  --toolbar-border: #e0e0e0;
+  --button-bg: #f0f0f0;
+  --button-border: #ccc;
+  --button-hover: #4ecdc4;
+}
+
+body {
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* --- THE CANVAS GRID --- */
+.canvas-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--bg-color);
+  /* The grid pattern uses the --grid-color variable */
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 40px 40px;
+  z-index: 0; /* Send to back */
+  transition: background-color 0.3s;
+}
+
+/* --- GENERIC COMPONENT STYLES --- */
+.panel-base {
+  background: var(--toolbar-bg);
+  border: 1px solid var(--toolbar-border);
+  color: var(--text-color);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s;
+}
+
+.icon-button {
+  background: var(--button-bg);
+  border: 1px solid var(--button-border);
+  color: var(--text-color);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.icon-button:hover {
+  background: var(--button-hover);
+  border-color: var(--button-hover);
+  color: white;
+}
