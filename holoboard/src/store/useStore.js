@@ -1,52 +1,57 @@
 import { create } from 'zustand';
-import { yShapes, yConnectors, doc } from '../services/collaboration';
+import * as Y from 'yjs';
+import { connectToRoom, yShapes, yConnectors, doc } from '../services/collaboration';
+
+const undoManager = new Y.UndoManager([yShapes, yConnectors]);
 
 const useStore = create((set, get) => ({
-  // --- UI STATE (Local only) ---
+  // ... (Keep existing state: selectedId, mode, stage, theme, settings...) ...
   selectedId: null,
-  mode: 'select',
+  mode: 'select', 
   connectingFromId: null,
   stage: { scale: 1, x: 0, y: 0 },
   theme: 'dark',
   gridColor: 'rgba(255, 255, 255, 0.05)',
+  isSnapEnabled: true,
+  penColor: '#df4b26',
+  penWidth: 3,
 
-  // --- SHARED STATE (Synced) ---
   shapes: {}, 
   connectors: {},
 
-  // --- ACTIONS (Write to Yjs) ---
-  addShape: (newShape) => {
-    yShapes.set(newShape.id, newShape); // Syncs automatically
-  },
-
+  // ... (Keep existing actions: addShape, updateShape, addConnector, deleteSelected...) ...
+  addShape: (newShape) => yShapes.set(newShape.id, newShape),
   updateShape: (id, newAttrs) => {
     const shape = yShapes.get(id);
-    if (shape) {
-      yShapes.set(id, { ...shape, ...newAttrs });
-    }
+    if (shape) yShapes.set(id, { ...shape, ...newAttrs });
   },
-
-  addConnector: (newConnector) => {
-    yConnectors.set(newConnector.id, newConnector);
-  },
-
+  addConnector: (newConnector) => yConnectors.set(newConnector.id, newConnector),
   deleteSelected: () => {
     const { selectedId } = get();
     if (!selectedId) return;
-    
     doc.transact(() => {
         yShapes.delete(selectedId);
-        // Clean up connected arrows
         yConnectors.forEach((conn, key) => {
-            if (conn.from === selectedId || conn.to === selectedId) {
-                yConnectors.delete(key);
-            }
+            if (conn.from === selectedId || conn.to === selectedId) yConnectors.delete(key);
         });
     });
     set({ selectedId: null });
   },
 
-  // --- LOCAL ACTIONS ---
+  // --- NEW ACTION: RESET BOARD ---
+  resetBoard: () => {
+    doc.transact(() => {
+        yShapes.clear();     // Delete all shapes
+        yConnectors.clear(); // Delete all connections
+    });
+    set({ selectedId: null });
+  },
+  // -------------------------------
+
+  undo: () => undoManager.undo(),
+  redo: () => undoManager.redo(),
+
+  // ... (Keep local actions: selectShape, setMode, setStage, toggleTheme...) ...
   selectShape: (id) => set({ selectedId: id }),
   setMode: (mode) => set({ mode, connectingFromId: null, selectedId: null }),
   setConnectingFrom: (id) => set({ connectingFromId: id }),
@@ -57,22 +62,15 @@ const useStore = create((set, get) => ({
     return { theme: newTheme, gridColor: newGridColor };
   }),
   setGridColor: (color) => set({ gridColor: color }),
+  toggleSnap: () => set((state) => ({ isSnapEnabled: !state.isSnapEnabled })),
+  setPenColor: (color) => set({ penColor: color }),
+  setPenWidth: (width) => set({ penWidth: width }),
 
-  // --- SYNC INITIALIZER ---
-  syncWithYjs: () => {
-    // 1. Load initial data
-    set({ 
-        shapes: yShapes.toJSON(), 
-        connectors: yConnectors.toJSON() 
-    });
-
-    // 2. Listen for updates from Server
-    yShapes.observe(() => {
-        set({ shapes: yShapes.toJSON() });
-    });
-    yConnectors.observe(() => {
-        set({ connectors: yConnectors.toJSON() });
-    });
+  syncWithYjs: (roomId) => {
+    connectToRoom(roomId);
+    set({ shapes: yShapes.toJSON(), connectors: yConnectors.toJSON() });
+    yShapes.observe(() => set({ shapes: yShapes.toJSON() }));
+    yConnectors.observe(() => set({ connectors: yConnectors.toJSON() }));
   }
 }));
 

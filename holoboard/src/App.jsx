@@ -1,10 +1,13 @@
-import React, { useEffect } from 'react'; // <-- Import useEffect
+import React from 'react';
 import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
-import Home from './pages/Home';
-import Board from './pages/Board';
-import useStore from './store/useStore'; // <-- Import Store
 
+// Import your pages
+import Home from './pages/Home';
+import Dashboard from './pages/Dashboard';
+import Board from './pages/Board';
+
+// Get the Clerk key from .env.local
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 if (!clerkPubKey) {
@@ -13,13 +16,6 @@ if (!clerkPubKey) {
 
 function ClerkProviderWithRoutes() {
   const navigate = useNavigate();
-  const syncWithYjs = useStore((state) => state.syncWithYjs);
-
-  // --- START SYNCING ON LOAD ---
-  useEffect(() => {
-    syncWithYjs();
-  }, []);
-  // -----------------------------
 
   return (
     <ClerkProvider
@@ -27,9 +23,27 @@ function ClerkProviderWithRoutes() {
       navigate={(to) => navigate(to)}
     >
       <Routes>
+        {/* PUBLIC ROUTE: Landing Page */}
         <Route path="/" element={<Home />} />
+        
+        {/* PROTECTED ROUTE: Dashboard (Lobby) */}
         <Route
-          path="/board"
+          path="/dashboard"
+          element={
+            <>
+              <SignedIn>
+                <Dashboard />
+              </SignedIn>
+              <SignedOut>
+                <RedirectToSignIn />
+              </SignedOut>
+            </>
+          }
+        />
+
+        {/* PROTECTED ROUTE: The Whiteboard (Dynamic Room ID) */}
+        <Route
+          path="/board/:roomId"
           element={
             <>
               <SignedIn>

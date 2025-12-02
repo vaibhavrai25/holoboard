@@ -7,7 +7,7 @@ const Home = () => {
 
   // If already logged in, go straight to the board
   if (isSignedIn) {
-    return <Navigate to="/board" />;
+    return <Navigate to="/dashboard" />; // Changed from /board to /dashboard
   }
 
   return (

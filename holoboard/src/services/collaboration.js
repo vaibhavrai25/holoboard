@@ -2,22 +2,27 @@ import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import { IndexeddbPersistence } from 'y-indexeddb';
 
-// 1. Create the shared document
 export const doc = new Y.Doc();
-
-// 2. Connect to your local server (running on port 1234)
-export const provider = new WebsocketProvider(
-  'http://127.0.0.1:5173', 
-  'holoboard-room', // Room name
-  doc
-);
-
-// 3. Save data to browser database (so it works offline/reload)
-export const persistence = new IndexeddbPersistence('holoboard-data', doc);
-
-// 4. Export shared data types
 export const yShapes = doc.getMap('shapes');
 export const yConnectors = doc.getMap('connectors');
 
-// 5. Export awareness (for cursors)
-export const awareness = provider.awareness;
+export let provider = null;
+export let awareness = null;
+export let persistence = null;
+
+export const connectToRoom = (roomId) => {
+  if (provider && provider.roomname === roomId) return;
+  if (provider) {
+    provider.destroy();
+    if (persistence) persistence.destroy();
+  }
+
+  // YOUR CLOUD SERVER URL
+  const SERVER_URL = 'wss://glorious-succotash-wrg7466vjpx629599-1234.app.github.dev'; 
+
+  provider = new WebsocketProvider(SERVER_URL, roomId, doc);
+  persistence = new IndexeddbPersistence(`holoboard-${roomId}`, doc);
+  awareness = provider.awareness;
+
+  return provider;
+};
