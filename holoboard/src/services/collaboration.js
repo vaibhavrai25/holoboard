@@ -12,13 +12,14 @@ export let persistence = null;
 
 export const connectToRoom = (roomId) => {
   if (provider && provider.roomname === roomId) return;
+  
   if (provider) {
     provider.destroy();
     if (persistence) persistence.destroy();
   }
 
-  // YOUR CLOUD SERVER URL
-  const SERVER_URL = 'wss://glorious-succotash-wrg7466vjpx629599-1234.app.github.dev'; 
+  // 👇 CHECK THIS LINE CAREFULLY. Ensure quotes are closed.
+  const SERVER_URL = 'wss://glorious-succotash-wrg7466vjpx629599-1234.app.github.dev/'; 
 
   provider = new WebsocketProvider(SERVER_URL, roomId, doc);
   persistence = new IndexeddbPersistence(`holoboard-${roomId}`, doc);

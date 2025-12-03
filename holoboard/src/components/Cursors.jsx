@@ -3,7 +3,6 @@ import { Circle, Text, Group } from 'react-konva';
 import { awareness } from '../services/collaboration';
 import { useUser } from '@clerk/clerk-react';
 
-// Assign a random color to this user
 const getRandomColor = () => '#' + Math.floor(Math.random()*16777215).toString(16);
 const myColor = getRandomColor();
 
@@ -12,8 +11,11 @@ const Cursors = ({ stageRef }) => {
   const [users, setUsers] = useState(new Map());
 
   useEffect(() => {
+    // --- FIX 1: SAFETY CHECK ---
+    // If we are not connected to the room yet, STOP.
+    if (!awareness) return; 
+
     if (user) {
-        // Broadcast my presence
         awareness.setLocalStateField('user', {
             name: user.firstName || "Guest",
             color: myColor,
@@ -25,23 +27,27 @@ const Cursors = ({ stageRef }) => {
     const handleMouseMove = () => {
         if (!stageRef.current) return;
         const stage = stageRef.current;
-        // Calculate position relative to the zoom/pan of the stage
         const transform = stage.getAbsoluteTransform().copy().invert();
         const pos = stage.getPointerPosition();
         
         if (pos) {
             const localPos = transform.point(pos);
-            awareness.setLocalStateField('user', {
-                ...awareness.getLocalState().user,
-                x: localPos.x,
-                y: localPos.y
-            });
+            // --- FIX 2: CHECK INSIDE LOOP ---
+            if (awareness) {
+                awareness.setLocalStateField('user', {
+                    ...awareness.getLocalState().user,
+                    x: localPos.x,
+                    y: localPos.y
+                });
+            }
         }
     };
 
     const handleUpdate = () => {
-        const states = awareness.getStates();
-        setUsers(new Map(states));
+        if (awareness) {
+            const states = awareness.getStates();
+            setUsers(new Map(states));
+        }
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -49,9 +55,12 @@ const Cursors = ({ stageRef }) => {
 
     return () => {
         window.removeEventListener('mousemove', handleMouseMove);
-        awareness.off('change', handleUpdate);
+        if (awareness) awareness.off('change', handleUpdate);
     };
   }, [user]);
+
+  // --- FIX 3: DO NOT RENDER IF OFFLINE ---
+  if (!awareness) return null;
 
   return (
     <>
@@ -63,13 +72,9 @@ const Cursors = ({ stageRef }) => {
             <Circle radius={8} fill={color} stroke="white" strokeWidth={2} />
             <Text 
                 text={name} 
-                y={-20} 
-                x={10} 
-                fontSize={14} 
-                fill={color} 
-                fontStyle="bold"
-                shadowColor="black"
-                shadowBlur={2} 
+                y={-20} x={10} 
+                fontSize={14} fill={color} fontStyle="bold"
+                shadowColor="black" shadowBlur={2} 
             />
           </Group>
         );

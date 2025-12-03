@@ -8,25 +8,46 @@ const Connector = ({ connector }) => {
   const fromShape = shapes[connector.from];
   const toShape = shapes[connector.to];
 
-  // If one of the shapes was deleted, don't draw the line
+  // Safety check: If a shape was deleted, don't crash
   if (!fromShape || !toShape) return null;
 
-  // Simple math: Draw from Center to Center
-  // (Day 3 we can make this smarter to touch edges)
-  const fromX = fromShape.x + (fromShape.type === 'rect' ? 50 : 0);
-  const fromY = fromShape.y + (fromShape.type === 'rect' ? 50 : 0);
-  
-  const toX = toShape.x + (toShape.type === 'rect' ? 50 : 0);
-  const toY = toShape.y + (toShape.type === 'rect' ? 50 : 0);
+  // --- HELPER: GET CENTER OF ANY SHAPE ---
+  const getCenter = (shape) => {
+    const width = shape.width || 100;
+    const height = shape.height || 100;
+
+    // List of shapes drawn from TOP-LEFT
+    // (Rect, Sticky, Image, and SVG Paths like Cloud/Database usually)
+    const topLeftTypes = ['rect', 'sticky', 'image', 'cloud', 'database', 'speech', 'cube', 'arrowRight'];
+
+    if (topLeftTypes.includes(shape.type)) {
+        return {
+            x: shape.x + width / 2,
+            y: shape.y + height / 2
+        };
+    } 
+    
+    // List of shapes drawn from CENTER
+    // (Circle, Polygon, etc.)
+    return {
+        x: shape.x,
+        y: shape.y
+    };
+  };
+
+  const start = getCenter(fromShape);
+  const end = getCenter(toShape);
 
   return (
     <Arrow
-      points={[fromX, fromY, toX, toY]}
+      points={[start.x, start.y, end.x, end.y]}
       stroke="white"
       strokeWidth={2}
       pointerLength={10}
       pointerWidth={10}
       fill="white"
+      opacity={0.8}
+      listening={false} // Don't steal clicks
     />
   );
 };

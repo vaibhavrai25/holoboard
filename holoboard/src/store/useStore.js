@@ -5,73 +5,152 @@ import { connectToRoom, yShapes, yConnectors, doc } from '../services/collaborat
 const undoManager = new Y.UndoManager([yShapes, yConnectors]);
 
 const useStore = create((set, get) => ({
-  // ... (Keep existing state: selectedId, mode, stage, theme, settings...) ...
+
+  /* ────────────────────────────────────────────
+   * UI / META STATE
+   * ────────────────────────────────────────────
+   */
   selectedId: null,
-  mode: 'select', 
+  mode: 'select',              // select | edit | connect | draw | text
   connectingFromId: null,
-  stage: { scale: 1, x: 0, y: 0 },
+
+  stage: { scale: 1, x: 0, y: 0 },   // Camera / viewport
+
   theme: 'dark',
   gridColor: 'rgba(255, 255, 255, 0.05)',
+
+  boardName: "Untitled Board",
+
+  /* ────────────────────────────────────────────
+   * Settings
+   * ────────────────────────────────────────────
+   */
   isSnapEnabled: true,
   penColor: '#df4b26',
   penWidth: 3,
 
-  shapes: {}, 
+  /* ────────────────────────────────────────────
+   * SHARED DOCUMENT STATE (Y.js)
+   * ────────────────────────────────────────────
+   */
+  shapes: {},
   connectors: {},
 
-  // ... (Keep existing actions: addShape, updateShape, addConnector, deleteSelected...) ...
-  addShape: (newShape) => yShapes.set(newShape.id, newShape),
+  /* ────────────────────────────────────────────
+   * ACTIONS
+   * ────────────────────────────────────────────
+   */
+
+  setBoardName: (name) => set({ boardName: name }),
+
+  /* SHAPES */
+  addShape: (shape) => yShapes.set(shape.id, shape),
+
   updateShape: (id, newAttrs) => {
-    const shape = yShapes.get(id);
-    if (shape) yShapes.set(id, { ...shape, ...newAttrs });
-  },
-  addConnector: (newConnector) => yConnectors.set(newConnector.id, newConnector),
-  deleteSelected: () => {
-    const { selectedId } = get();
-    if (!selectedId) return;
-    doc.transact(() => {
-        yShapes.delete(selectedId);
-        yConnectors.forEach((conn, key) => {
-            if (conn.from === selectedId || conn.to === selectedId) yConnectors.delete(key);
-        });
-    });
-    set({ selectedId: null });
+    const oldShape = yShapes.get(id);
+    if (!oldShape) return;
+    yShapes.set(id, { ...oldShape, ...newAttrs });
   },
 
-  // --- NEW ACTION: RESET BOARD ---
-  resetBoard: () => {
+  /* CONNECTORS */
+  addConnector: (conn) => yConnectors.set(conn.id, conn),
+
+  updateConnector: (id, partial) => {
+    const old = yConnectors.get(id);
+    if (!old) return;
+    yConnectors.set(id, { ...old, ...partial });
+  },
+
+  deleteSelected: () => {
+    const id = get().selectedId;
+    if (!id) return;
+
     doc.transact(() => {
-        yShapes.clear();     // Delete all shapes
-        yConnectors.clear(); // Delete all connections
+      yShapes.delete(id);
+
+      // Remove linked connectors
+      yConnectors.forEach((conn, key) => {
+        if (conn.from === id || conn.to === id) {
+          yConnectors.delete(key);
+        }
+      });
     });
+
     set({ selectedId: null });
   },
-  // -------------------------------
 
   undo: () => undoManager.undo(),
   redo: () => undoManager.redo(),
 
-  // ... (Keep local actions: selectShape, setMode, setStage, toggleTheme...) ...
   selectShape: (id) => set({ selectedId: id }),
-  setMode: (mode) => set({ mode, connectingFromId: null, selectedId: null }),
+
+  setMode: (mode) =>
+    set({ mode, connectingFromId: null, selectedId: null }),
+
   setConnectingFrom: (id) => set({ connectingFromId: id }),
-  setStage: (newStage) => set({ stage: newStage }),
-  toggleTheme: () => set((state) => {
-    const newTheme = state.theme === 'light' ? 'dark' : 'light';
-    const newGridColor = newTheme === 'light' ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.05)';
-    return { theme: newTheme, gridColor: newGridColor };
-  }),
+
+  /* CAMERA / STAGE */
+  setStage: (partial) =>
+    set((state) => ({
+      stage: { ...state.stage, ...partial }
+    })),
+
+  /* THEME */
+  toggleTheme: () =>
+    set((state) => {
+      const dark = state.theme === "light";
+      return {
+        theme: dark ? "dark" : "light",
+        gridColor: dark
+          ? "rgba(255,255,255,0.05)"
+          : "rgba(0,0,0,0.05)"
+      };
+    }),
+
   setGridColor: (color) => set({ gridColor: color }),
-  toggleSnap: () => set((state) => ({ isSnapEnabled: !state.isSnapEnabled })),
+
+  toggleSnap: () =>
+    set((s) => ({ isSnapEnabled: !s.isSnapEnabled })),
+
   setPenColor: (color) => set({ penColor: color }),
   setPenWidth: (width) => set({ penWidth: width }),
 
+  /* ────────────────────────────────────────────
+   * Y.js SYNC — FIXED FOR NO INFINITE LOOPS
+   * ────────────────────────────────────────────
+   */
   syncWithYjs: (roomId) => {
     connectToRoom(roomId);
-    set({ shapes: yShapes.toJSON(), connectors: yConnectors.toJSON() });
-    yShapes.observe(() => set({ shapes: yShapes.toJSON() }));
-    yConnectors.observe(() => set({ connectors: yConnectors.toJSON() }));
-  }
+
+    // Initial load
+    set({
+      shapes: yShapes.toJSON(),
+      connectors: yConnectors.toJSON(),
+    });
+
+    // SHAPES listener (stable)
+    yShapes.observe(() => {
+      const newShapes = yShapes.toJSON();
+      const oldShapes = get().shapes;
+
+      // Avoid infinite render loop
+      if (JSON.stringify(newShapes) !== JSON.stringify(oldShapes)) {
+        set({ shapes: newShapes });
+      }
+    });
+
+    // CONNECTORS listener (stable)
+    yConnectors.observe(() => {
+      const newConn = yConnectors.toJSON();
+      const oldConn = get().connectors;
+
+      // Avoid infinite update loop
+      if (JSON.stringify(newConn) !== JSON.stringify(oldConn)) {
+        set({ connectors: newConn });
+      }
+    });
+  },
+
 }));
 
 export default useStore;
