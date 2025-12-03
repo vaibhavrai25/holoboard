@@ -11,8 +11,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- PASTE NEW KEY HERE (Keep the quotes!) ---
-const API_KEY = "AIzaSyCBI0VtuHln23nOcBB3IzwPeCF8Cfqa0dk"; 
+
+const API_KEY = ""; 
 
 if (!API_KEY || API_KEY.startsWith("PASTE_")) {
     console.error("❌ CRITICAL ERROR: You didn't paste your API Key in server/ai.js!");
@@ -21,7 +21,7 @@ if (!API_KEY || API_KEY.startsWith("PASTE_")) {
 
 console.log("3. API Key is set.");
 
-const genAI = new GoogleGenerativeAI("AIzaSyCBI0VtuHln23nOcBB3IzwPeCF8Cfqa0dk");
+const genAI = new GoogleGenerativeAI("");
 console.log("4. Google Generative AI client initialized.");
 
 const SYSTEM_PROMPT = `
