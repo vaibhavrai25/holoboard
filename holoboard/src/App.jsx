@@ -2,12 +2,12 @@ import React from 'react';
 import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 
-// Import your pages
+
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import Board from './pages/Board';
 
-// Get the Clerk key from .env.local
+
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 if (!clerkPubKey) {
