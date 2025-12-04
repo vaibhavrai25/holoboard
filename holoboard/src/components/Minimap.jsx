@@ -3,13 +3,13 @@ import { Stage, Layer, Rect, Circle, RegularPolygon, Line, Image as KonvaImage }
 import useStore from '../store/useStore';
 import useImage from 'use-image';
 
-// Configuration
-const BASE_WIDTH = 240; // Fixed width, height will adjust automatically
+
+const BASE_WIDTH = 240; 
 const SCALE = 0.10; 
 const PADDING = 20;
 const BOTTOM_OFFSET = 80; 
 
-// Helper for Images in Minimap
+
 const MiniURLImage = ({ shape, ...props }) => {
   const [img] = useImage(shape.src);
   return <KonvaImage image={img} {...props} />;
@@ -21,17 +21,16 @@ const Minimap = () => {
   const setStage = useStore((state) => state.setStage);
   const theme = useStore((state) => state.theme);
 
-  // --- UI STATE ---
+
   const [isOpen, setIsOpen] = useState(true);
   
-  // --- DYNAMIC DIMENSIONS STATE ---
-  // Start with a safe default, will update immediately on mount
+  
   const [mapDims, setMapDims] = useState({ 
     width: BASE_WIDTH, 
     height: BASE_WIDTH * (window.innerHeight / window.innerWidth) 
   });
 
-  // --- DRAGGABLE STATE ---
+  
   const [position, setPosition] = useState({ 
     x: window.innerWidth - BASE_WIDTH - PADDING, 
     y: window.innerHeight - (BASE_WIDTH * (window.innerHeight / window.innerWidth)) - BOTTOM_OFFSET 
@@ -40,7 +39,7 @@ const Minimap = () => {
   const [isDragging, setIsDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
 
-  // --- RESIZE HANDLER (Keeps Aspect Ratio Perfect) ---
+  
   useEffect(() => {
     const handleResize = () => {
       const ratio = window.innerHeight / window.innerWidth;
@@ -48,21 +47,21 @@ const Minimap = () => {
       
       setMapDims({ width: BASE_WIDTH, height: newHeight });
 
-      // Keep it on screen if window shrinks
+      
       setPosition((prev) => ({
         x: Math.min(prev.x, window.innerWidth - BASE_WIDTH - PADDING),
         y: Math.min(prev.y, window.innerHeight - newHeight - PADDING)
       }));
     };
 
-    // Call once on mount to set initial correct size
+  
     handleResize();
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // --- DRAG HANDLERS ---
+  
   const handleMouseDown = (e) => {
     setIsDragging(true);
     dragOffset.current = { x: e.clientX - position.x, y: e.clientY - position.y };
@@ -85,7 +84,7 @@ const Minimap = () => {
     };
   }, [isDragging]);
 
-  // --- VIEWPORT MATH ---
+  
   const viewX = (-stageState.x / stageState.scale) * SCALE;
   const viewY = (-stageState.y / stageState.scale) * SCALE;
   const viewW = (window.innerWidth / stageState.scale) * SCALE;
@@ -100,7 +99,7 @@ const Minimap = () => {
     setStage({ scale: stageState.scale, x: newStageX, y: newStageY });
   };
 
-  // --- RENDERER ---
+  
   const renderMiniShape = (shape) => {
     const props = {
       key: shape.id,
@@ -123,7 +122,7 @@ const Minimap = () => {
         return <MiniURLImage shape={shape} {...props} width={200 * SCALE} height={150 * SCALE} />;
     }
     
-    // DRAWING RENDERER (Line & Eraser)
+  
     if (shape.type === 'line' || shape.type === 'eraser') {
         const isEraser = shape.type === 'eraser';
         return (
@@ -164,8 +163,8 @@ const Minimap = () => {
     <div 
         style={{
             ...styles.container, 
-            width: mapDims.width,   // <--- DYNAMIC WIDTH
-            height: mapDims.height + 24, // <--- DYNAMIC HEIGHT (+24 for header)
+            width: mapDims.width,   
+            height: mapDims.height + 24, 
             left: position.x, 
             top: position.y,
             cursor: isDragging ? 'grabbing' : 'default'
