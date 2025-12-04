@@ -6,21 +6,21 @@ const ZoomControls = () => {
   const setStage = useStore((state) => state.setStage);
 
   const handleZoom = (direction) => {
-    const scaleBy = 1.2; // Zoom factor
+    const scaleBy = 1.2;
     const oldScale = stage.scale;
     const newScale = direction === 'in' ? oldScale * scaleBy : oldScale / scaleBy;
 
-    // Zoom towards the CENTER of the screen
+    
     const centerX = window.innerWidth / 2;
     const centerY = window.innerHeight / 2;
 
-    // Calculate the point in the world (grid) that is currently at the center
+  
     const worldPoint = {
       x: (centerX - stage.x) / oldScale,
       y: (centerY - stage.y) / oldScale,
     };
 
-    // Calculate new position to keep that world point at the center
+
     const newPos = {
       x: centerX - worldPoint.x * newScale,
       y: centerY - worldPoint.y * newScale,
@@ -70,7 +70,7 @@ const styles = {
     gap: '10px',
     padding: '8px 12px',
     borderRadius: '12px',
-    zIndex: 100, // Above the canvas
+    zIndex: 100, 
   },
   btn: {
     width: '32px',
@@ -85,7 +85,7 @@ const styles = {
     textAlign: 'center',
     fontSize: '14px',
     fontWeight: '600',
-    fontVariantNumeric: 'tabular-nums', // Keeps numbers monospaced so text doesn't jitter
+    fontVariantNumeric: 'tabular-nums', 
   }
 };
 
