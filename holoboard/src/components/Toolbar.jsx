@@ -10,8 +10,7 @@ import {
   LuChevronLeft, LuChevronRight, LuSparkles, LuX, LuMoveRight 
 } from 'react-icons/lu';
 
-// --- CONFIGURATION ---
-// ⚠️ ENSURE THIS MATCHES YOUR PORT 3000 PUBLIC URL
+
 const AI_API_URL = 'https://glorious-succotash-wrg7466vjpx629599-3000.app.github.dev/generate';
 
 const GRID_COLORS = ['#ff0000', '#00ff00', '#0000ff', '#aaaaaa', 'rgba(255,255,255,0.1)', 'rgba(0,0,0,0.1)'];
@@ -64,7 +63,7 @@ const Toolbar = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   
-  // --- NEW: Error State for AI ---
+
   const [aiError, setAiError] = useState(''); 
 
   const fileInputRef = useRef(null);
@@ -73,7 +72,7 @@ const Toolbar = () => {
     setActiveMenu(activeMenu === menuName ? null : menuName);
     if (menuName === 'ai') {
         setAiPrompt('');
-        setAiError(''); // Clear errors when opening
+        setAiError(''); 
     }
   };
 
@@ -105,12 +104,12 @@ const Toolbar = () => {
   const handleConfirmReset = () => { resetBoard(); setActiveMenu(null); };
   const triggerAutoLayout = () => window.dispatchEvent(new CustomEvent('auto-layout'));
 
-  // --- 🪄 IMPROVED AI HANDLER ---
+  
   const handleMagic = async () => {
     if (!aiPrompt.trim()) return;
     
     setIsLoading(true);
-    setAiError(''); // Clear previous errors
+    setAiError(''); 
     document.body.style.cursor = 'wait';
 
     try {
@@ -120,7 +119,7 @@ const Toolbar = () => {
         body: JSON.stringify({ prompt: aiPrompt })
       });
 
-      // Handle HTTP errors (like 500 or 404)
+      
       if (!response.ok) {
         throw new Error(`Server Error: ${response.status}`);
       }
@@ -129,7 +128,7 @@ const Toolbar = () => {
 
       if (data.error) throw new Error(data.error);
 
-      // Success Logic
+      
       if (data.shapes) {
         const cx = window.innerWidth/2 - 200; 
         const cy = window.innerHeight/2 - 100;
@@ -140,11 +139,11 @@ const Toolbar = () => {
       }
       
       setTimeout(triggerAutoLayout, 200);
-      setActiveMenu(null); // Close only on success
+      setActiveMenu(null); 
 
     } catch (error) {
       console.error(error);
-      // SHOW ERROR IN UI, NOT ALERT
+      
       setAiError("Generation failed. Check server console."); 
     } finally {
       setIsLoading(false);
