@@ -8,7 +8,7 @@ const Navbar = () => {
   const { roomId } = useParams();
   const { user } = useUser();
   
-  // Store
+ 
   const theme = useStore((state) => state.theme);
   const toggleTheme = useStore((state) => state.toggleTheme);
   const shapes = useStore((state) => state.shapes);
@@ -16,16 +16,16 @@ const Navbar = () => {
   const boardName = useStore((state) => state.boardName);
   const setBoardName = useStore((state) => state.setBoardName);
   
-  // UI State
+  
   const [copied, setCopied] = useState(false);
   const [showSaveMenu, setShowSaveMenu] = useState(false);
   const [tempName, setTempName] = useState(boardName); 
   
-  // Status: 'idle' | 'validating' | 'confirm-replace' | 'saving' | 'success' | 'error'
+
   const [saveStatus, setSaveStatus] = useState('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Reset when menu opens
+ 
   useEffect(() => {
     if (showSaveMenu) {
         setSaveStatus('idle');
@@ -43,36 +43,36 @@ const Navbar = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // --- STEP 1: PRE-CHECK LOGIC ---
+ 
   const handlePreCheck = async () => {
-    // 1. Check Empty Name
+    
     if (!tempName.trim()) {
         setErrorMessage("Name cannot be empty");
         return;
     }
-    setErrorMessage(''); // Clear errors
+    setErrorMessage(''); 
     setSaveStatus('validating');
 
     try {
-        // 2. Fetch existing boards to check for duplicates
+        
         const res = await fetch(`https://glorious-succotash-wrg7466vjpx629599-1234.app.github.dev/api/boards/${user.id}`);
         const boards = await res.json();
 
-        // Check if ANY other board (not this one) has the same name
+        
         const duplicate = boards.find(b => b.name.toLowerCase() === tempName.trim().toLowerCase() && b.roomId !== roomId);
 
         if (duplicate) {
-            setSaveStatus('confirm-replace'); // Trigger Confirmation UI
+            setSaveStatus('confirm-replace'); 
         } else {
-            executeSave(); // No duplicate, proceed immediately
+            executeSave(); 
         }
     } catch (err) {
-        // If fetch fails (maybe offline), just try to save anyway
+        
         executeSave(); 
     }
   };
 
-  // --- STEP 2: ACTUAL SAVE LOGIC ---
+
   const executeSave = async () => {
     setSaveStatus('saving');
 
@@ -182,7 +182,7 @@ const Navbar = () => {
                                     value={tempName} 
                                     onChange={(e) => {
                                         setTempName(e.target.value);
-                                        if(errorMessage) setErrorMessage(''); // Clear error on type
+                                        if(errorMessage) setErrorMessage(''); 
                                     }} 
                                     autoFocus
                                     disabled={saveStatus !== 'idle'}
