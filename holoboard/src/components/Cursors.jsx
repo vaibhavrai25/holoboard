@@ -11,8 +11,7 @@ const Cursors = ({ stageRef }) => {
   const [users, setUsers] = useState(new Map());
 
   useEffect(() => {
-    // --- FIX 1: SAFETY CHECK ---
-    // If we are not connected to the room yet, STOP.
+    
     if (!awareness) return; 
 
     if (user) {
@@ -32,7 +31,7 @@ const Cursors = ({ stageRef }) => {
         
         if (pos) {
             const localPos = transform.point(pos);
-            // --- FIX 2: CHECK INSIDE LOOP ---
+            
             if (awareness) {
                 awareness.setLocalStateField('user', {
                     ...awareness.getLocalState().user,
@@ -59,7 +58,7 @@ const Cursors = ({ stageRef }) => {
     };
   }, [user]);
 
-  // --- FIX 3: DO NOT RENDER IF OFFLINE ---
+
   if (!awareness) return null;
 
   return (
