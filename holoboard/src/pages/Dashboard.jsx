@@ -9,10 +9,10 @@ const Dashboard = () => {
   const [roomId, setRoomId] = useState('');
   const [savedBoards, setSavedBoards] = useState([]);
 
-  // FETCH SAVED BOARDS ON LOAD 
+   
   useEffect(() => {
     if (user) {
-        // REPLACE WITH YOUR BACKEND URL
+        
         fetch(`https://glorious-succotash-wrg7466vjpx629599-1234.app.github.dev/api/boards/:userId`.replace(':userId', user.id))
             .then(res => res.json())
             .then(data => setSavedBoards(data))
