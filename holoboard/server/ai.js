@@ -1,4 +1,4 @@
-// server/ai.js
+
 console.log("1. Script started...");
 
 const express = require('express');
@@ -15,7 +15,7 @@ app.use(express.json());
 const API_KEY = ""; 
 
 if (!API_KEY || API_KEY.startsWith("PASTE_")) {
-    console.error("❌ CRITICAL ERROR: You didn't paste your API Key in server/ai.js!");
+    console.error(" CRITICAL ERROR: You didn't paste your API Key in server/ai.js!");
     process.exit(1);
 }
 
@@ -30,11 +30,11 @@ Format: { "shapes": [ { "id": "1", "type": "rect", "x": 0, "y": 0, "text": "Labe
 `;
 
 app.get('/', (req, res) => {
-    res.send("AI Server is UP and Running! 🤖");
+    res.send("AI Server is UP and Running! ");
 });
 
 app.post('/generate', async (req, res) => {
-  console.log("📥 Received Request:", req.body);
+  console.log(" Received Request:", req.body);
   const { prompt } = req.body;
 
   if (!prompt) return res.status(400).json({ error: "Prompt required" });
@@ -42,12 +42,12 @@ app.post('/generate', async (req, res) => {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     
-    console.log("🤖 Sending to Gemini...");
+    console.log("Sending to Gemini...");
     const result = await model.generateContent(SYSTEM_PROMPT + "\nPrompt: " + prompt);
     const response = await result.response;
     let text = response.text();
 
-    console.log("✅ Raw AI Response:", text.substring(0, 50) + "..."); // Log first 50 chars
+    console.log("Raw AI Response:", text.substring(0, 50) + "..."); 
 
     text = text.replace(/```json/g, '').replace(/```/g, '').trim();
     const data = JSON.parse(text);
@@ -55,7 +55,7 @@ app.post('/generate', async (req, res) => {
     res.json(data);
 
   } catch (error) {
-    console.error("❌ ERROR DURING GENERATION:", error);
+    console.error("ERROR DURING GENERATION:", error);
     res.status(500).json({ error: error.message });
   }
 });
