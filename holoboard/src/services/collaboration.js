@@ -18,7 +18,7 @@ export const connectToRoom = (roomId) => {
     if (persistence) persistence.destroy();
   }
 
-  // 👇 CHECK THIS LINE CAREFULLY. Ensure quotes are closed.
+ 
   const SERVER_URL = 'wss://glorious-succotash-wrg7466vjpx629599-1234.app.github.dev/'; 
 
   provider = new WebsocketProvider(SERVER_URL, roomId, doc);
