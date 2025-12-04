@@ -4,7 +4,7 @@
   padding: 0;
   overflow: hidden;
 
-  /* --- DEFAULT DARK THEME VARIABLES --- */
+
   --bg-color: #1a1a1a;
   --text-color: rgba(255, 255, 255, 0.87);
   --toolbar-bg: #2a2a2a;
@@ -12,11 +12,11 @@
   --button-bg: #3a3a3a;
   --button-border: #555;
   --button-hover: #646cff;
-  /* This variable is updated dynamically by JavaScript */
+  
   --grid-color: rgba(255, 255, 255, 0.05);
 }
 
-/* --- LIGHT THEME OVERRIDES --- */
+
 .light-mode {
   --bg-color: #f4f4f9;
   --text-color: #1a1a1a;
@@ -36,7 +36,7 @@ body {
   transition: background-color 0.3s, color 0.3s;
 }
 
-/* --- THE CANVAS GRID --- */
+
 .canvas-container {
   position: absolute;
   top: 0;
@@ -44,16 +44,16 @@ body {
   width: 100vw;
   height: 100vh;
   background-color: var(--bg-color);
-  /* The grid pattern uses the --grid-color variable */
+ 
   background-image:
     linear-gradient(var(--grid-color) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
   background-size: 40px 40px;
-  z-index: 0; /* Send to back */
+  z-index: 0; 
   transition: background-color 0.3s;
 }
 
-/* --- GENERIC COMPONENT STYLES --- */
+
 .panel-base {
   background: var(--toolbar-bg);
   border: 1px solid var(--toolbar-border);
