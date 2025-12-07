@@ -7,7 +7,8 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 console.log("2. Modules loaded...");
 
-const app = express();
+const app = express(); // puru is here 
+
 app.use(cors());
 app.use(express.json());
 
