@@ -15,7 +15,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (!isLoaded || !user) return;
     setIsLoadingBoards(true);
-    fetch(`https://glorious-succotash-wrg7466vjpx629599-1234.app.github.dev/api/boards/${user.id}`)
+    fetch(`https://holoboard-backend.onrender.com/api/boards/${user.id}`)
         .then(res => res.json())
         .then(data => setSavedBoards(data))
         .catch(err => console.error(err))
@@ -44,7 +44,7 @@ const Dashboard = () => {
     if (!boardToDelete) return;
     try {
         // Using the stored _id to delete from backend
-        const res = await fetch(`https://glorious-succotash-wrg7466vjpx629599-1234.app.github.dev/api/boards/${boardToDelete}`, {
+        const res = await fetch(`https://holoboard-backend.onrender.com/api/boards/${boardToDelete}`, {
             method: 'DELETE',
         });
         

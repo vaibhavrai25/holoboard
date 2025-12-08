@@ -55,7 +55,7 @@ const Navbar = () => {
 
     try {
         // 2. Fetch existing boards to check for duplicates
-        const res = await fetch(`https://glorious-succotash-wrg7466vjpx629599-1234.app.github.dev/api/boards/${user.id}`);
+        const res = await fetch(`https://holoboard-backend.onrender.com/api/boards/${user.id}`);
         const boards = await res.json();
 
         // Check if ANY other board (not this one) has the same name
@@ -79,7 +79,7 @@ const Navbar = () => {
     const payload = { roomId, userId: user.id, name: tempName.trim(), data: { shapes, connectors } };
 
     try {
-        const response = await fetch('https://glorious-succotash-wrg7466vjpx629599-1234.app.github.dev/api/save', {
+        const response = await fetch('https://holoboard-backend.onrender.com/api/save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)

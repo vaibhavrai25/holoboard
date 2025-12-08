@@ -1,4 +1,4 @@
-const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:1234";
+const API_BASE = process.env.REACT_APP_API_BASE || "https://holoboard-backend.onrender.com";
 
 export async function askAI(prompt) {
   try {

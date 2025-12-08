@@ -21,7 +21,7 @@ export const connectToRoom = (roomId) => {
   }
 
   //  You had trailing slash → causing same room issue  
-  const SERVER_URL = "wss:glorious-succotash-wrg7466vjpx629599-1234.app.github.dev";
+  const SERVER_URL = "wss://holoboard-backend.onrender.com";
 
   provider = new WebsocketProvider(SERVER_URL, roomId, doc);
   awareness = provider.awareness;

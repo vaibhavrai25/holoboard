@@ -31,7 +31,7 @@ const Board = () => {
       const loadFromCloud = async () => {
         try {
           //  CLOUD BACKEND URL
-          const response = await fetch(`https://glorious-succotash-wrg7466vjpx629599-1234.app.github.dev/api/board/${roomId}`);
+          const response = await fetch(`https://holoboard-backend.onrender.com/api/board/${roomId}`);
           const dbData = await response.json();
 
           if (dbData && dbData.data) {
