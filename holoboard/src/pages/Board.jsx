@@ -30,7 +30,7 @@ const Board = () => {
       // B. Try to Load from Cloud Database (MongoDB)
       const loadFromCloud = async () => {
         try {
-          // YOUR CLOUD BACKEND URL
+          //  CLOUD BACKEND URL
           const response = await fetch(`https://glorious-succotash-wrg7466vjpx629599-1234.app.github.dev/api/board/${roomId}`);
           const dbData = await response.json();
 
@@ -42,7 +42,7 @@ const Board = () => {
              
              // NOTE: We access the store state directly via hook in component for simplicity
              if (Object.keys(shapes).length === 0) {
-                 console.log("☁️ Loading saved board from MongoDB...");
+                 console.log(" Loading saved board from MongoDB...");
                  const { shapes: savedShapes, connectors: savedConnectors } = dbData.data;
                  
                  // Restore Shapes
@@ -54,11 +54,11 @@ const Board = () => {
                     Object.values(savedConnectors).forEach(conn => addConnector(conn));
                  }
              } else {
-                 console.log("🔌 Connected to live session (skipping DB load).");
+                 console.log(" Connected to live session (skipping DB load).");
              }
           }
         } catch (error) {
-          console.error("❌ Failed to load board from cloud:", error);
+          console.error(" Failed to load board from cloud:", error);
         }
       };
 

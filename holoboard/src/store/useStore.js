@@ -6,10 +6,7 @@ const undoManager = new Y.UndoManager([yShapes, yConnectors]);
 
 const useStore = create((set, get) => ({
 
-  /* ────────────────────────────────────────────
-   * UI / META STATE
-   * ────────────────────────────────────────────
-   */
+  
   selectedId: null,
   mode: 'select',              // select | edit | connect | draw | text
   connectingFromId: null,
@@ -21,25 +18,16 @@ const useStore = create((set, get) => ({
 
   boardName: "Untitled Board",
 
-  /* ────────────────────────────────────────────
-   * Settings
-   * ────────────────────────────────────────────
-   */
+  
   isSnapEnabled: true,
   penColor: '#df4b26',
   penWidth: 3,
 
-  /* ────────────────────────────────────────────
-   * SHARED DOCUMENT STATE (Y.js)
-   * ────────────────────────────────────────────
-   */
+  
   shapes: {},
   connectors: {},
 
-  /* ────────────────────────────────────────────
-   * ACTIONS
-   * ────────────────────────────────────────────
-   */
+  
 
   setBoardName: (name) => set({ boardName: name }),
 
@@ -61,6 +49,7 @@ const useStore = create((set, get) => ({
     yConnectors.set(id, { ...old, ...partial });
   },
 
+  /* DELETION & CLEARING */
   deleteSelected: () => {
     const id = get().selectedId;
     if (!id) return;
@@ -77,6 +66,23 @@ const useStore = create((set, get) => ({
     });
 
     set({ selectedId: null });
+  },
+
+  //  Clears the entire board (Shared & Local)
+  resetBoard: () => {
+    // 1. Clear Y.js shared types (Propagates to other users)
+    doc.transact(() => {
+      yShapes.clear();
+      yConnectors.clear();
+    });
+
+    // 2. Clear local state immediately (UI update)
+    set({
+      shapes: {},
+      connectors: {},
+      selectedId: null,
+      connectingFromId: null
+    });
   },
 
   undo: () => undoManager.undo(),
@@ -115,10 +121,7 @@ const useStore = create((set, get) => ({
   setPenColor: (color) => set({ penColor: color }),
   setPenWidth: (width) => set({ penWidth: width }),
 
-  /* ────────────────────────────────────────────
-   * Y.js SYNC — FIXED FOR NO INFINITE LOOPS
-   * ────────────────────────────────────────────
-   */
+  
   syncWithYjs: (roomId) => {
     connectToRoom(roomId);
 

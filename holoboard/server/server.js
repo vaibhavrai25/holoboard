@@ -5,12 +5,8 @@ const http = require('http');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const WebSocket = require('ws');
+
 const setupWSConnection = require('y-websocket/bin/utils').setupWSConnection;
-
-
-
-
-
 
 const app = express();
 
@@ -31,17 +27,17 @@ app.get('/', (req, res) => {
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-// -------------------------------------------------------------------
-// 1. DATABASE CONNECTION (now using .env)
-// -------------------------------------------------------------------
+
+// 1. DATABASE CONNECTION
+
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected"))
   .catch(err => console.log("❌ DB Error:", err));
 
-// -------------------------------------------------------------------
+
 // 2. SCHEMA
-// -------------------------------------------------------------------
+
 
 const BoardSchema = new mongoose.Schema({
   roomId: String,
@@ -53,9 +49,9 @@ const BoardSchema = new mongoose.Schema({
 
 const Board = mongoose.model('Board', BoardSchema);
 
-// -------------------------------------------------------------------
+
 // 3. API ROUTES
-// -------------------------------------------------------------------
+
 
 // Save Board
 app.post('/api/save', async (req, res) => {
@@ -86,6 +82,7 @@ app.get('/api/boards/:userId', async (req, res) => {
 app.get('/api/board/:roomId', async (req, res) => {
   try {
     const board = await Board.findOne({ roomId: req.params.roomId });
+    // Return explicit structure so frontend doesn't crash on null
     res.json(board || { data: null });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -93,6 +90,7 @@ app.get('/api/board/:roomId', async (req, res) => {
 });
 
 // Delete board (by DB ID)
+// Note: Frontend must send _id, NOT roomId
 app.delete('/api/boards/:id', async (req, res) => {
   try {
     const result = await Board.findByIdAndDelete(req.params.id);
@@ -107,20 +105,21 @@ app.delete('/api/boards/:id', async (req, res) => {
 });
 
 
-
-// -------------------------------------------------------------------
 // 4. WEBSOCKET
-// -------------------------------------------------------------------
+
 
 wss.on("connection", (ws, req) => {
+  // This library handles the room logic internally based on req.url
   setupWSConnection(ws, req);
 });
 
-// -------------------------------------------------------------------
+
 // 5. START SERVER
-// -------------------------------------------------------------------
+
+
 
 const PORT = process.env.PORT || 1234;
+
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(` Server running on port ${PORT}`);
 });

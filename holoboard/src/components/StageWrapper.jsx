@@ -6,10 +6,11 @@ import useImage from 'use-image';
 import useStore from '../store/useStore';
 import Connector from './Connector';
 import Cursors from './Cursors';
+import { useParams } from 'react-router-dom';
 
 const GRID_SIZE = 40;
 
-// --- SVG PATHS (Tweaked for better centering) ---
+// --- SVG PATHS ---
 const PATHS = {
   cloud: "M25,60 a20,20 0 0,1 0,-40 a20,20 0 0,1 30,-10 a20,20 0 0,1 30,10 a20,20 0 0,1 0,40 z",
   database: "M10,20 C10,10 90,10 90,20 L90,80 C90,90 10,90 10,80 Z M10,20 C10,30 90,30 90,20",
@@ -53,6 +54,18 @@ const StageWrapper = () => {
   const [editingId, setEditingId] = useState(null);
   const textAreaRef = useRef(null);
 
+  // --- CORRECTION 1: Match the variable name to your Router (:roomId) ---
+  const { roomId } = useParams(); 
+  const syncWithYjs = useStore((state) => state.syncWithYjs);
+
+  // --- CORRECTION 2: Use roomId to trigger the sync ---
+  useEffect(() => {
+    if (roomId) {
+      console.log(" Connected to room:", roomId);
+      syncWithYjs(roomId);
+    }
+  }, [roomId, syncWithYjs]);
+
   // --- LISTENERS ---
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -68,9 +81,6 @@ const StageWrapper = () => {
 
   useEffect(() => {
     const handleExport = () => { if(stageRef.current){ const uri=stageRef.current.toDataURL({pixelRatio:2}); const link=document.createElement('a'); link.download='holoboard.png'; link.href=uri; document.body.appendChild(link); link.click(); document.body.removeChild(link); }};
-    const handleAutoLayout = () => { /* Layout logic */ }; // (Kept short for brevity)
-    const handleAIGenerate = () => { /* AI logic */ }; // (Kept short for brevity)
-
     window.addEventListener('export-image', handleExport);
     return () => { window.removeEventListener('export-image', handleExport); };
   }, [shapes, connectors, stageState]);
@@ -109,7 +119,6 @@ const StageWrapper = () => {
       onDragEnd: (e) => handleDragEnd(e, shape.id),
       onTransformEnd: handleTransformEnd,
       onDblClick: () => handleShapeDoubleClick(shape.id),
-      // Bind Rotation
       rotation: shape.rotation || 0,
     };
 
@@ -122,41 +131,44 @@ const StageWrapper = () => {
     const shadowBlur = selectedId === shape.id ? 20 : 5;
     const isEditing = editingId === shape.id;
 
-    // --- FIX: TEXT OFFSET & CENTER ---
-    const renderText = (centered = true) => {
+    // --- TEXT RENDERER ---
+    const renderText = (isCenteredOrigin) => {
         if (isEditing) return null;
         
-        let tx = centered ? shape.x : shape.x-w/2;
-        let ty = centered ? shape.y : shape.y-h/2;
-        
-        // Manual Tweaks for Path Shapes
-        if (shape.type === 'cloud') ty += 10; // Push text down
-        if (shape.type === 'database') ty += 5;
+        const textProps = {
+            x: shape.x,
+            y: shape.y,
+            width: w,
+            height: h,
+            text: shape.text || "",
+            align: "center",
+            verticalAlign: "middle",
+            fontSize: 14,
+            fontStyle: "bold",
+            fill: shape.fill === '#000000' ? '#fff' : '#1a1a1a',
+            listening: false
+        };
 
-        return <Text x={tx} y={ty} width={w} height={h} text={shape.text||""} align="center" verticalAlign="middle" fontSize={14} fontStyle="bold" fill={fill==='#000000'?'#fff':'#1a1a1a'} listening={false} />;
+        if (isCenteredOrigin) {
+            textProps.offsetX = w / 2;
+            textProps.offsetY = h / 2;
+        } else {
+            textProps.offsetX = 0;
+            textProps.offsetY = 0;
+        }
+
+        if (shape.type === 'cloud') textProps.y += 10;
+        if (shape.type === 'database') textProps.y += 5;
+
+        return <Text {...textProps} />;
     };
 
-    // --- NEW: FREE ARROW RENDERER ---
     if (shape.type === 'arrow-shape') {
-        // Arrow is special: it acts like a shape (draggable) but renders as an arrow
         return (
             <React.Fragment key={shape.id}>
-                {/* Invisible hit box for easier selection */}
                 <Rect {...props} x={shape.x} y={shape.y - 15} width={w} height={30} fill="transparent" />
-                <Arrow 
-                    {...props}
-                    points={[0, 0, w, 0]} // Relative to group x/y
-                    x={shape.x} y={shape.y}
-                    pointerLength={10} pointerWidth={10}
-                    fill={fill} stroke={fill} strokeWidth={4} // Arrow uses fill color for stroke
-                    shadowBlur={shadowBlur}
-                />
-                {!isEditing && <Text 
-                    x={shape.x} y={shape.y - 20} width={w} 
-                    text={shape.text || ""} 
-                    align="center" fontSize={14} fontStyle="bold" fill="#1a1a1a" listening={false} 
-                    rotation={shape.rotation} // Rotate text with arrow
-                />}
+                <Arrow {...props} points={[0, 0, w, 0]} x={shape.x} y={shape.y} pointerLength={10} pointerWidth={10} fill={fill} stroke={fill} strokeWidth={4} shadowBlur={shadowBlur} />
+                {!isEditing && <Text x={shape.x} y={shape.y - 20} width={w} text={shape.text || ""} align="center" fontSize={14} fontStyle="bold" fill="#1a1a1a" listening={false} rotation={shape.rotation} />}
             </React.Fragment>
         );
     }
@@ -165,32 +177,30 @@ const StageWrapper = () => {
         const isSticky = shape.type === 'sticky';
         return <React.Fragment key={shape.id}>
             <Rect {...props} x={shape.x} y={shape.y} width={w} height={h} fill={fill} cornerRadius={isSticky?2:8} shadowBlur={shadowBlur} stroke={stroke} strokeWidth={strokeWidth} />
-            {renderText(false)}
+            {renderText(false)} 
         </React.Fragment>;
     }
-    if (shape.type === 'circle') return <React.Fragment key={shape.id}><Circle {...props} x={shape.x} y={shape.y} radius={w/2} fill={fill} shadowBlur={shadowBlur} stroke={stroke} strokeWidth={strokeWidth} />{renderText(false)}</React.Fragment>;
-    if (shape.type === 'diamond') return <React.Fragment key={shape.id}><RegularPolygon {...props} x={shape.x} y={shape.y} sides={4} radius={w/2+10} fill={fill} shadowBlur={shadowBlur} stroke={stroke} strokeWidth={strokeWidth} />{renderText(false)}</React.Fragment>;
+
+    if (shape.type === 'circle') return <React.Fragment key={shape.id}><Circle {...props} x={shape.x} y={shape.y} radius={w/2} fill={fill} shadowBlur={shadowBlur} stroke={stroke} strokeWidth={strokeWidth} />{renderText(true)}</React.Fragment>;
+    if (shape.type === 'diamond') return <React.Fragment key={shape.id}><RegularPolygon {...props} x={shape.x} y={shape.y} sides={4} radius={w/2+10} fill={fill} shadowBlur={shadowBlur} stroke={stroke} strokeWidth={strokeWidth} />{renderText(true)}</React.Fragment>;
     
-    // Polygons
     if (['triangle','pentagon','hexagon','octagon'].includes(shape.type)) {
         const sides = {triangle:3, pentagon:5, hexagon:6, octagon:8}[shape.type];
-        return <React.Fragment key={shape.id}><RegularPolygon {...props} x={shape.x} y={shape.y} sides={sides} radius={w/2} fill={fill} shadowBlur={shadowBlur} stroke={stroke} strokeWidth={strokeWidth} />{renderText(false)}</React.Fragment>;
+        return <React.Fragment key={shape.id}><RegularPolygon {...props} x={shape.x} y={shape.y} sides={sides} radius={w/2} fill={fill} shadowBlur={shadowBlur} stroke={stroke} strokeWidth={strokeWidth} />{renderText(true)}</React.Fragment>;
     }
-    if (shape.type === 'star') return <React.Fragment key={shape.id}><Star {...props} x={shape.x} y={shape.y} numPoints={5} innerRadius={w/4} outerRadius={w/2} fill={fill} shadowBlur={shadowBlur} stroke={stroke} strokeWidth={strokeWidth} />{renderText(false)}</React.Fragment>;
-    if (shape.type === 'ellipse') return <React.Fragment key={shape.id}><Ellipse {...props} x={shape.x} y={shape.y} radiusX={w/2} radiusY={h/3} fill={fill} shadowBlur={shadowBlur} stroke={stroke} strokeWidth={strokeWidth} />{renderText(false)}</React.Fragment>;
-    if (shape.type === 'ring') return <React.Fragment key={shape.id}><Ring {...props} x={shape.x} y={shape.y} innerRadius={w/3} outerRadius={w/2} fill={fill} shadowBlur={shadowBlur} stroke={stroke} strokeWidth={strokeWidth} />{renderText(false)}</React.Fragment>;
+    if (shape.type === 'star') return <React.Fragment key={shape.id}><Star {...props} x={shape.x} y={shape.y} numPoints={5} innerRadius={w/4} outerRadius={w/2} fill={fill} shadowBlur={shadowBlur} stroke={stroke} strokeWidth={strokeWidth} />{renderText(true)}</React.Fragment>;
+    if (shape.type === 'ellipse') return <React.Fragment key={shape.id}><Ellipse {...props} x={shape.x} y={shape.y} radiusX={w/2} radiusY={h/3} fill={fill} shadowBlur={shadowBlur} stroke={stroke} strokeWidth={strokeWidth} />{renderText(true)}</React.Fragment>;
+    if (shape.type === 'ring') return <React.Fragment key={shape.id}><Ring {...props} x={shape.x} y={shape.y} innerRadius={w/3} outerRadius={w/2} fill={fill} shadowBlur={shadowBlur} stroke={stroke} strokeWidth={strokeWidth} />{renderText(true)}</React.Fragment>;
     
-    // Path Shapes
     if (PATHS[shape.type]) {
         return <React.Fragment key={shape.id}>
             <Path {...props} x={shape.x - w/2} y={shape.y - h/2} data={PATHS[shape.type]} fill={fill} scaleX={w/100} scaleY={h/100} shadowBlur={shadowBlur} stroke={stroke} strokeWidth={strokeWidth} />
-            {renderText(false)}
+            {renderText(true)}
         </React.Fragment>;
     }
 
     if (shape.type === 'image') return <URLImage key={shape.id} shape={shape} {...props} />;
     
-    // Line/Eraser
     if (shape.type === 'line' || shape.type === 'eraser') {
         const isEraser = shape.type === 'eraser';
         return <Line key={shape.id} points={shape.points} stroke={isEraser ? '#000' : (shape.stroke || '#df4b26')} strokeWidth={shape.strokeWidth || 3} tension={0.5} lineCap="round" lineJoin="round" globalCompositeOperation={isEraser ? 'destination-out' : 'source-over'} listening={!isEraser && mode === 'select'} onClick={() => mode === 'select' && selectShape(shape.id)} draggable={mode === 'select'} onDragEnd={(e) => updateShape(shape.id, { x: e.target.x(), y: e.target.y() })} />;
@@ -207,10 +217,9 @@ const StageWrapper = () => {
     const isCentered = !['rect', 'sticky', 'image', 'line', 'eraser', 'arrow-shape'].includes(shape.type);
     if(isCentered) { tx -= tw/2; ty -= th/2; }
     
-    // Offsets for specific shapes
     if (shape.type === 'cloud') ty += 10;
     if (shape.type === 'database') ty += 5;
-    if (shape.type === 'arrow-shape') ty -= 25; // Move text above arrow
+    if (shape.type === 'arrow-shape') ty -= 25; 
 
     const sx = tx * scale + stageState.x;
     const sy = ty * scale + stageState.y;
