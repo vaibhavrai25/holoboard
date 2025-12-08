@@ -170,12 +170,13 @@ const styles = {
   },
   heading: {
     // FONT CHANGED HERE
-    fontFamily: "'HK Modular', sans-serif", 
+    fontFamily: "michroma", 
     fontSize: '60px',
-    fontWeight: '900',
+    fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: '4px',
+    letterSpacing: '3px',
     margin: '0 0 20px 0',
+    
   },
   redText: {
     color: '#b91c1c',

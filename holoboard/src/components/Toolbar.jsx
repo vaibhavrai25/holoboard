@@ -5,11 +5,11 @@ import {
   LuMousePointer2, LuLink, LuPencil, LuEraser, LuUndo2, LuRedo2, LuPlus,
   LuMagnet, LuLayoutGrid, LuLayoutTemplate, LuBot, LuTrash2,
   LuSquare, LuCircle, LuDiamond, LuStickyNote, LuImage,
-  LuTriangle, LuHexagon, LuStar, LuCloud, LuDatabase, LuMessageSquare,
-  LuArrowRight, LuCircleDashed, LuBox,
-  LuChevronLeft, LuChevronRight, LuSparkles, LuX, LuMoveRight 
+  LuTriangle, LuStar, LuCloud, LuDatabase, LuMessageSquare,
+  LuMoveRight, LuCircleDashed, LuBox,
+  LuChevronLeft, LuChevronRight, LuSparkles, LuX
 } from 'react-icons/lu';
-
+import { askAI } from "../services/ai";
 // --- CONFIGURATION ---
 // ⚠️ ENSURE THIS MATCHES YOUR PORT 3000 PUBLIC URL
 const AI_API_URL = 'https://glorious-succotash-wrg7466vjpx629599-3000.app.github.dev/generate';
@@ -24,24 +24,42 @@ const SHAPE_DEFAULTS = {
   purple: { fill: '#a855f7', text: 'Label', width: 100, height: 100 },
   indigo: { fill: '#6366f1', text: 'Label', width: 100, height: 100 },
   sticky: { fill: '#fff740', text: 'Note', width: 150, height: 150 },
-  arrow: { fill: '#333', text: 'Label', width: 100, height: 20 }
+  // Arrow default settings: Wider than tall for a "Directional" look
+  arrow: { fill: '#333333', text: '', width: 120, height: 60 } 
 };
 
+// Map the internal type to the default style key
 const SHAPE_TYPES = {
-  rect: 'default', circle: 'teal', ellipse: 'teal', ring: 'teal',
-  diamond: 'yellow', triangle: 'yellow', star: 'yellow',
-  cloud: 'purple', speech: 'purple', database: 'indigo', sticky: 'sticky', arrowshape: 'default'
+  rect: 'default', 
+  circle: 'teal', 
+  ellipse: 'teal', 
+  ring: 'teal',
+  diamond: 'yellow', 
+  triangle: 'yellow', 
+  star: 'yellow',
+  cloud: 'purple', 
+  speech: 'purple', 
+  database: 'indigo', 
+  sticky: 'sticky', 
+  arrow: 'arrow' // Added standard Arrow type here
 };
 
 const SHAPE_ICONS = {
-  rect: <LuSquare />, circle: <LuCircle />, ellipse: <LuCircle style={{transform: 'scaleX(1.2)'}} />,
-  ring: <LuCircleDashed />, diamond: <LuDiamond />, triangle: <LuTriangle />,
-  star: <LuStar />, cloud: <LuCloud />, speech: <LuMessageSquare />,
-  database: <LuDatabase />, sticky: <LuStickyNote />,
-  arrowshape: <LuMoveRight />
+  rect: <LuSquare />, 
+  circle: <LuCircle />, 
+  ellipse: <LuCircle style={{transform: 'scaleX(1.2)'}} />,
+  ring: <LuCircleDashed />, 
+  diamond: <LuDiamond />, 
+  triangle: <LuTriangle />,
+  star: <LuStar />, 
+  cloud: <LuCloud />, 
+  speech: <LuMessageSquare />,
+  database: <LuDatabase />, 
+  sticky: <LuStickyNote />,
+  arrow: <LuMoveRight /> // Mapped standard arrow icon
 };
 
-const Toolbar = () => {
+const Toolbar = (props) => {
   const addShape = useStore((state) => state.addShape);
   const addConnector = useStore((state) => state.addConnector);
   const mode = useStore((state) => state.mode);
@@ -64,7 +82,6 @@ const Toolbar = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   
-  // --- NEW: Error State for AI ---
   const [aiError, setAiError] = useState(''); 
 
   const fileInputRef = useRef(null);
@@ -73,7 +90,7 @@ const Toolbar = () => {
     setActiveMenu(activeMenu === menuName ? null : menuName);
     if (menuName === 'ai') {
         setAiPrompt('');
-        setAiError(''); // Clear errors when opening
+        setAiError('');
     }
   };
 
@@ -86,8 +103,21 @@ const Toolbar = () => {
     const id = uuidv4();
     const configKey = SHAPE_TYPES[type] || 'default';
     const { fill, text, width, height } = SHAPE_DEFAULTS[configKey];
-    addShape({ id, type, x: window.innerWidth/2-50, y: window.innerHeight/2-50, text, fill, width, height });
-    setMode('select'); setActiveMenu(null);
+    
+    addShape({ 
+      id, 
+      type, 
+      x: window.innerWidth/2-50, 
+      y: window.innerHeight/2-50, 
+      text, 
+      fill, 
+      width, 
+      height,
+      rotation: 0 // Initialize rotation for arrows to work with direction
+    });
+    
+    setMode('select'); 
+    setActiveMenu(null);
   };
 
   const handleImageUpload = (e) => {
@@ -105,50 +135,200 @@ const Toolbar = () => {
   const handleConfirmReset = () => { resetBoard(); setActiveMenu(null); };
   const triggerAutoLayout = () => window.dispatchEvent(new CustomEvent('auto-layout'));
 
-  // --- 🪄 IMPROVED AI HANDLER ---
+  // --- 🪄 AI HANDLER ---
+  // Replaced to use askAI service and to support runAICommand prop if provided.
   const handleMagic = async () => {
     if (!aiPrompt.trim()) return;
-    
+
     setIsLoading(true);
-    setAiError(''); // Clear previous errors
+    setAiError('');
     document.body.style.cursor = 'wait';
 
     try {
-      const response = await fetch(AI_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: aiPrompt })
-      });
+      // Prefer using the frontend service wrapper (askAI)
+      const res = await askAI(aiPrompt); // expect { ok: true, response: "..." } or { ok:false, error: "..." }
 
-      // Handle HTTP errors (like 500 or 404)
-      if (!response.ok) {
-        throw new Error(`Server Error: ${response.status}`);
+      if (!res || !res.ok) {
+        const errMsg = (res && res.error) ? res.error : 'AI request failed';
+        throw new Error(errMsg);
       }
 
-      const data = await response.json();
+      const text = res.response ?? '';
 
-      if (data.error) throw new Error(data.error);
+      // Try to parse JSON command(s) from AI response
+      let parsed = null;
+      try {
+        parsed = JSON.parse(text);
+      } catch (err) {
+        // If parse fails, attempt to extract JSON substring (common model behavior)
+        const match = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+        if (match) {
+          try { parsed = JSON.parse(match[0]); } catch (e) { parsed = null; }
+        }
+      }
 
-      // Success Logic
-      if (data.shapes) {
-        const cx = window.innerWidth/2 - 200; 
-        const cy = window.innerHeight/2 - 100;
-        data.shapes.forEach(s => addShape({ ...s, id: s.id || uuidv4(), x: (s.x||0)+cx, y: (s.y||0)+cy, width: s.type==='sticky'?150:100, height: s.type==='sticky'?150:100 }));
+      // If parsed exists and is an object with action/commands, pass to board or handle locally
+      if (parsed) {
+        // If parent provided runAICommand, hand off the parsed command object
+        if (props && typeof props.runAICommand === 'function') {
+          try {
+            props.runAICommand(parsed);
+          } catch (e) {
+            console.warn('runAICommand failed, falling back to local handling', e);
+            // fall through to local handling
+            handleParsedCommandLocally(parsed);
+          }
+        } else {
+          handleParsedCommandLocally(parsed);
+        }
+      } else {
+        // Not JSON — fallback: create a single sticky with AI text
+        addShape({
+          id: uuidv4(),
+          type: 'sticky',
+          x: window.innerWidth/2 - 100,
+          y: window.innerHeight/2 - 80,
+          width: 220,
+          height: 140,
+          text: text.length > 0 ? text : aiPrompt
+        });
       }
-      if (data.connectors) {
-        data.connectors.forEach(c => addConnector({ id: uuidv4(), from: c.from, to: c.to }));
-      }
-      
+
+      // run layout slightly after insertion if any shapes were added
       setTimeout(triggerAutoLayout, 200);
-      setActiveMenu(null); // Close only on success
+      setActiveMenu(null);
 
     } catch (error) {
-      console.error(error);
-      // SHOW ERROR IN UI, NOT ALERT
-      setAiError("Generation failed. Check server console."); 
+      console.error('AI error:', error);
+      setAiError(error.message || 'Generation failed. Check server console.');
     } finally {
       setIsLoading(false);
       document.body.style.cursor = 'default';
+    }
+  };
+
+  // Local fallback handler for parsed command objects
+  const handleParsedCommandLocally = (cmd) => {
+    // If AI returned an array of shapes/connectors or an object with shapes/connectors
+    if (Array.isArray(cmd)) {
+      // assume array of shapes/connectors
+      cmd.forEach(item => handleParsedItem(item));
+      return;
+    }
+
+    if (cmd.shapes || cmd.connectors) {
+      if (cmd.shapes) {
+        const cx = window.innerWidth/2 - 200; 
+        const cy = window.innerHeight/2 - 100;
+        cmd.shapes.forEach(s => addShape({ ...s, id: s.id || uuidv4(), x: (s.x||0)+cx, y: (s.y||0)+cy, width: s.width || (s.type==='sticky'?150:100), height: s.height || (s.type==='sticky'?150:100) }));
+      }
+      if (cmd.connectors) {
+        cmd.connectors.forEach(c => addConnector({ id: uuidv4(), from: c.from, to: c.to }));
+      }
+      return;
+    }
+
+    // If action-based command
+    if (cmd.action) {
+      switch (cmd.action) {
+        case 'create_sticky':
+          addShape({
+            id: uuidv4(),
+            type: 'sticky',
+            x: window.innerWidth/2 - 100,
+            y: window.innerHeight/2 - 80,
+            width: 220,
+            height: 140,
+            text: cmd.text || 'Note'
+          });
+          break;
+
+        case 'create_shape':
+          addShape({
+            id: uuidv4(),
+            type: cmd.shape || 'rect',
+            x: cmd.x || window.innerWidth/2 - 50,
+            y: cmd.y || window.innerHeight/2 - 50,
+            width: cmd.width || 120,
+            height: cmd.height || 80,
+            text: cmd.text || ''
+          });
+          break;
+
+        case 'create_multiple':
+          for (let i = 0; i < (cmd.count || 1); i++) {
+            addShape({
+              id: uuidv4(),
+              type: cmd.type || 'sticky',
+              x: window.innerWidth/2 - 100 + (i * 160),
+              y: window.innerHeight/2 - 80,
+              width: cmd.width || (cmd.type === 'sticky' ? 150 : 100),
+              height: cmd.height || (cmd.type === 'sticky' ? 150 : 100),
+              text: (cmd.textPrefix ? `${cmd.textPrefix} ${i+1}` : `Note ${i+1}`)
+            });
+          }
+          break;
+
+        case 'create_flowchart':
+          let x = cmd.x || 100;
+          (cmd.steps || []).forEach((step, idx) => {
+            addShape({
+              id: uuidv4(),
+              type: 'rect',
+              x: x + idx * 200,
+              y: cmd.y || 160,
+              width: 160,
+              height: 70,
+              text: step
+            });
+          });
+          if (cmd.connectors) {
+            cmd.connectors.forEach(c => addConnector({ id: uuidv4(), from: c.from, to: c.to }));
+          }
+          break;
+
+        default:
+          console.warn('Unknown AI action:', cmd.action);
+          // fallback: create sticky with stringified command
+          addShape({
+            id: uuidv4(),
+            type: 'sticky',
+            x: window.innerWidth/2 - 100,
+            y: window.innerHeight/2 - 80,
+            width: 220,
+            height: 140,
+            text: JSON.stringify(cmd).slice(0, 400)
+          });
+      }
+      return;
+    }
+
+    // Final fallback: if an object but not recognized, create sticky with JSON
+    addShape({
+      id: uuidv4(),
+      type: 'sticky',
+      x: window.innerWidth/2 - 100,
+      y: window.innerHeight/2 - 80,
+      width: 220,
+      height: 140,
+      text: JSON.stringify(cmd).slice(0, 400)
+    });
+  };
+
+  const handleParsedItem = (item) => {
+    if (!item) return;
+    if (item.type === 'connector' || item.kind === 'connector') {
+      addConnector({ id: uuidv4(), from: item.from, to: item.to });
+    } else {
+      addShape({
+        id: item.id || uuidv4(),
+        type: item.type || 'rect',
+        x: item.x || window.innerWidth/2 - 50,
+        y: item.y || window.innerHeight/2 - 50,
+        width: item.width || 120,
+        height: item.height || 80,
+        text: item.text || ''
+      });
     }
   };
 
@@ -186,9 +366,13 @@ const Toolbar = () => {
           <IconButton isActive={activeMenu === 'shape'} onClick={() => toggleMenu('shape')}><LuPlus size={24} /></IconButton>
           {activeMenu === 'shape' && (
             <div className="panel-base" style={styles.megaMenu}>
-              {Object.keys(SHAPE_TYPES).map(type => (<IconButton key={type} onClick={() => handleAddShape(type)} title={type}>{SHAPE_ICONS[type] || <LuBox />}</IconButton>))}
+              {/* Loop now includes 'arrow', so no manual button needed */}
+              {Object.keys(SHAPE_TYPES).map(type => (
+                <IconButton key={type} onClick={() => handleAddShape(type)} title={type}>
+                    {SHAPE_ICONS[type] || <LuBox />}
+                </IconButton>
+              ))}
               <IconButton onClick={() => fileInputRef.current.click()} title="Image"><LuImage /></IconButton>
-              <IconButton onClick={() => handleAdd('arrowshape')} title="Free Arrow"><LuMoveRight /></IconButton>
             </div>
           )}
         </div>
@@ -205,31 +389,7 @@ const Toolbar = () => {
         <div style={styles.divider}></div>
         <IconButton color="#4ecdc4" onClick={triggerAutoLayout} title="Auto-Layout"><LuLayoutTemplate size={20} /></IconButton>
         
-        {/* --- AI SECTION --- */}
-        <div style={{ position: 'relative' }}>
-            <IconButton color="#a855f7" isActive={activeMenu === 'ai'} onClick={() => toggleMenu('ai')} title="AI Magic"><LuBot size={20} /></IconButton>
-            {activeMenu === 'ai' && (
-                <div className="panel-base" style={styles.aiMenu}>
-                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10}}>
-                        <span style={{fontWeight:'bold', color:'#a855f7', display:'flex', alignItems:'center', gap:5}}><LuSparkles /> AI Generate</span>
-                        <LuX style={{cursor:'pointer'}} onClick={() => setActiveMenu(null)} />
-                    </div>
-                    
-                    <textarea style={styles.aiInput} placeholder="e.g. Login flow" value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} autoFocus />
-                    
-                    {/* ERROR MESSAGE DISPLAY */}
-                    {aiError && (
-                        <div style={{color: '#fa5252', fontSize: '11px', marginTop: '5px', display:'flex', alignItems:'center', gap:4}}>
-                            <LuX size={12} /> {aiError}
-                        </div>
-                    )}
-
-                    <button style={{...styles.aiBtn, opacity: isLoading||!aiPrompt?0.6:1, cursor: isLoading?'wait':'pointer'}} onClick={handleMagic} disabled={isLoading||!aiPrompt}>
-                        {isLoading ? 'Dreaming...' : 'Generate'}
-                    </button>
-                </div>
-            )}
-        </div>
+        
 
         <div style={styles.divider}></div>
         <div style={{ position: 'relative' }}>
@@ -261,9 +421,8 @@ const styles = {
   confirmModal: { position: 'absolute', left: '60px', bottom: 0, padding: '16px', borderRadius: '12px', width: '160px', zIndex: 102 },
   swatch: { width: '24px', height: '24px', borderRadius: '4px', cursor: 'pointer' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' },
-  aiMenu: { position: 'absolute', left: '60px', bottom: 0, width: '260px', padding: '16px', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '10px', zIndex: 102, boxShadow: '0 4px 20px rgba(0,0,0,0.2)' },
-  aiInput: { width: '100%', height: '80px', padding: '10px', background: 'var(--bg-color)', border: '1px solid var(--button-border)', borderRadius: '8px', color: 'var(--text-color)', resize: 'none', outline: 'none', fontSize: '13px', fontFamily: 'inherit' },
-  aiBtn: { background: '#a855f7', color: 'white', border: 'none', padding: '8px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', transition: 'opacity 0.2s', marginTop: '5px' }
+  
+  
 };
 
 export default Toolbar;
