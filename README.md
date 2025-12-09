@@ -177,13 +177,10 @@ Input Sanitization: Text inputs in the shape editor are sanitized to prevent bas
 
 
 
-Current Status: Planned
+Current Status: Deployed
 
-Future Scope:
 
-Hand-drawn recognition: We plan to implement models that convert messy mouse sketches into perfect geometric shapes.
 
-Auto-Layout: We are looking into graph layout algorithms (like Dagre) to automatically organize complex connector webs for you.
 
 Team Members
 
